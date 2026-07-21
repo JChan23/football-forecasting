@@ -288,13 +288,10 @@ result = calibration_by_bucket(forecasts)
 
 5. **Minutes constraints kill substitute edge.** A player with 2.0 SoT/90 entering at the 65th minute has λ ≈ 0.56, not 2.0. Crowds ignore this.
 
-6. **Altitude inverts late-game logic.** At 2,200m, fatigue suppresses rather than opens up late-match scoring. The standard "more goals after 75 min" assumption fails.
-
 ---
 
 ## Author
 
 **Joshua Chan** | FMS Undergraduate, London School of Economics
-GitHub: [@JChan23](https://github.com/JChan23)
 
 *Built and validated across the 2026 FIFA World Cup, July 2026.*
