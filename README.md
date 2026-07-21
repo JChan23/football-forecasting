@@ -3,10 +3,9 @@
 A probabilistic forecasting framework for football match markets, built and validated across the 2026 FIFA World Cup.
 
 **Competition result:** Jump Trading Probability Cup 2026
-- 🥇 **Ranked 8th out of 966 human forecasters** in the knockout stage (top 1%)
-- 🏅 **Ranked 45th out of 3,515 human forecasters** overall (top 1.3%)
-- 📊 **+3.9 RBP gap vs crowd** across 996 settled forecasts (better than 88% of all participants)
-- ✅ **Elite calibration** — platform assessment: *"Your confidence consistently matches reality"*
+- **Ranked 55th out of 4,013 active forecasters** overall (top 1.4%)
+- **Ranked 11th out of 1,272 active forecasters** in the knockout stage (top 0.87%)
+- **+3.9 RBP gap vs crowd** across 996 settled forecasts (better than 88% of all participants)
 
 ---
 
