@@ -1,7 +1,6 @@
-"""
-Test suite for the football forecasting framework.
-Validates core mathematical properties and tournament-validated outputs.
-"""
+# Test suite for the football forecasting framework.
+# Validates mathematical properties and tournament-validated outputs.
+
 
 import sys
 import os
@@ -38,11 +37,10 @@ class TestPoissonCore(unittest.TestCase):
         self.assertAlmostEqual(p_at_least_one_goal(0.0), 0.0)
 
     def test_p_at_least_one_goal_large_lambda(self):
-        # For large λ, P(≥1) → 1
         self.assertGreater(p_at_least_one_goal(10), 0.9999)
 
     def test_window_lambda_proportional(self):
-        # 30-minute window = 1/3 of full match
+        # 30 minute window = 1/3 of full match
         lam = window_lambda(3.0, 0, 30)
         self.assertAlmostEqual(lam, 1.0)
 
@@ -103,9 +101,9 @@ class TestGoalWindows(unittest.TestCase):
     def test_stoppage_time_base_rates(self):
         result_fh = goal_in_stoppage_time(self.ctx, 'first')
         result_sh = goal_in_stoppage_time(self.ctx, 'second')
-        # Second half should be higher (more stoppage minutes)
+        # Second half should be higher (normally more stoppage minutes)
         self.assertGreater(result_sh['point_estimate'], result_fh['point_estimate'])
-        # Both should be well below 0.20 (crowd anchor is 18-22%)
+        # Both should be below 0.20 (crowd anchor is around 18-22%)
         self.assertLess(result_fh['point_estimate'], 0.15)
         self.assertLess(result_sh['point_estimate'], 0.20)
 
@@ -116,7 +114,7 @@ class TestGoalWindows(unittest.TestCase):
 
     def test_between_breaks_large_window(self):
         result = goal_between_hydration_breaks(self.ctx)
-        # 45-minute window for λ=2.4 should give ~73%
+        # 45-minute window for λ=2.4 should give around 73%
         self.assertGreater(result['point_estimate'], 0.65)
         self.assertLess(result['point_estimate'], 0.85)
 
@@ -130,7 +128,7 @@ class TestCompetingProcesses(unittest.TestCase):
         self.assertAlmostEqual(result['p_card_before_goal'], expected, places=3)
 
     def test_card_before_goal_above_fifty(self):
-        # With λ_cards > λ_goals, cards should arrive first more than 50%
+        # With λ_cards > λ_goals, cards should arrive first more than 50% of the time
         result = card_before_first_goal(1.8, 3.2)
         self.assertGreater(result['p_card_before_goal'], 0.50)
 
@@ -171,7 +169,7 @@ class TestPlayerThreshold(unittest.TestCase):
 
     def test_starter_full_90(self):
         result = starter_threshold(2.0, threshold=1)
-        # λ = 2.0 for full 90 → P(≥1) = 1 - e^(-2) ≈ 0.865
+        # λ = 2.0 for full 90 means P(≥1) = 1 - e^(-2) ≈ 0.865
         expected = 1 - math.exp(-2.0)
         self.assertAlmostEqual(result['p_reaches_threshold'], expected, places=3)
 
@@ -262,44 +260,42 @@ class TestCalibration(unittest.TestCase):
 
 
 class TestTournamentValidation(unittest.TestCase):
-    """
-    Regression tests using actual tournament predictions and outcomes.
-    These validate the directional correctness of models against tournament results.
-    RBP values are confirmed from competition platform; tests check direction and
-    sign of edge rather than exact platform scaling.
-    """
+    # Regression tests using actual tournament predictions and outcomes.
+    # These validate the directional correctness of models against tournament results.
+    # RBP values are confirmed from competition platform
+    # The tests check direction and sign of edge rather than exact platform scaling.
 
     def test_morocco_canada_shootout_model_output(self):
-        """Morocco vs Canada R16: Model gives ~11.6%, well below crowd 22%"""
+        # Morocco vs Canada R16: Model gives ~11.6%, well below crowd 22%
         result = penalty_shootout_probability(draw_prob_90=0.275, p_draw_after_et=0.42)
         self.assertAlmostEqual(result['p_shootout'], 0.1155, places=2)
-        # Model is below crowd → positive RBP when outcome is NO
+        # Model is below crowd means positive RBP when outcome is NO
         gap = rbp_gap(0.12, 0.22, 0, doubled=True)
         self.assertGreater(gap, 0)
 
     def test_portugal_spain_card_before_goal_direction(self):
-        """Portugal vs Spain QF: Model >60%, crowd ~50% → positive RBP when YES"""
+        # Portugal vs Spain QF: Model >60%, crowd ~50% means positive RBP when YES
         result = card_before_first_goal(1.8, 3.2, 'rivalry')
         self.assertGreater(result['p_card_before_goal'], 0.60)
-        # Model above crowd → positive RBP when outcome is YES
+        # Model above crowd means positive RBP when outcome is YES
         gap = rbp_gap(0.67, 0.50, 1, doubled=True)
         self.assertGreater(gap, 0)
 
     def test_england_mexico_altitude_suppression(self):
-        """England vs Mexico R16: Altitude suppresses late-window probability"""
+        # England vs Mexico R16: Altitude suppresses late-window probability
         ctx = MatchContext(2.0, 0.52, 0.24, 0.24, 'standard', altitude_m=2240)
         result = goal_after_second_hydration_break(ctx)
         # Key properties: altitude flag set, probability below 40%
         self.assertTrue(result['altitude_adjusted'])
         self.assertLess(result['point_estimate'], 0.40)
-        # Model well below crowd 49% → positive RBP when outcome is NO
+        # Model well below crowd 49% means positive RBP when outcome is NO
         gap = rbp_gap(0.31, 0.49, 0, doubled=True)
         self.assertGreater(gap, 0)
 
     def test_both_halves_same_goals_direction(self):
         """Both halves same goals: model consistently below crowd anchor of ~30%"""
         result = both_halves_same_goals(1.8)
-        # With λ=1.8, model gives ~26-33%; key insight is it's below naive crowd
+        # With λ=1.8, model gives ~26-33%. The key insight is it's below naive crowd
         # Model should be below the crowd's naive anchor
         self.assertLess(result['p_same_goals'], 0.36)
         # When outcome is NO, being below crowd is positive
@@ -308,17 +304,17 @@ class TestTournamentValidation(unittest.TestCase):
 
     def test_norway_england_card_each_half_direction(self):
         """Norway vs England: Low card rate → model below crowd → positive RBP when NO"""
-        # Norway: 2 cards in 5 matches = 0.4/game; England: 1.6/game
+        # Norway: 2 cards in 5 matches = 0.4/game. England: 1.6/game
         lambda_cards = 0.4 + 1.6
         result = card_in_each_half(lambda_cards, first_half_card_share=0.40)
         # With low combined card rate, P(card in each half) < 50%
         self.assertLess(result['p_card_in_each_half'], 0.50)
-        # Model below crowd 51% → positive RBP when outcome is NO
+        # Model below crowd 51% means positive RBP when outcome is NO
         gap = rbp_gap(0.40, 0.51, 0, doubled=True)
         self.assertGreater(gap, 0)
 
     def test_all_key_predictions_correct_direction(self):
-        """Summary: all major edge markets had positive expected RBP"""
+        # Summary: all major edge markets had positive expected RBP
         edges = [
             # (your_prob, crowd_prob, outcome, description)
             (0.12, 0.22, 0, "Morocco/Canada shootout"),
