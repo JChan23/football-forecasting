@@ -1,20 +1,7 @@
-"""
-poisson_goals.py
-----------------
-Poisson-based goal probability model for time-window markets.
+# Poisson-based goal probability model for time-window markets.
 
-Core insight: Goals in football approximate a Poisson process with rate λ
-(expected goals per 90 minutes). Given λ, we can compute the probability of
-at least one goal occurring in any specific time window.
+# Core insight: Goals in football approximate a Poisson process with rate λ (expected goals per 90 minutes). Given λ, we can compute the probability of at least one goal occurring in any specific time window.
 
-Validated markets:
-- Goal before first hydration break (~30 min)
-- Goal after second hydration break (~75-90 min)
-- Goal in first-half stoppage time (~45-48 min)
-- Goal in second-half stoppage time (~90-95 min)
-- Goal in first half after hydration break (~30-45 min)
-- Goal between hydration breaks (~30-75 min)
-"""
 
 import math
 from dataclasses import dataclass
@@ -23,25 +10,16 @@ from typing import Optional
 
 @dataclass
 class MatchContext:
-    """
-    Container for match-level inputs used across multiple models.
 
-    Parameters
-    ----------
-    lambda_total : float
-        Expected total goals for the match (from betting market over/under).
-    home_win_prob : float
-        Market-implied probability of home team winning in 90 minutes.
-    away_win_prob : float
-        Market-implied probability of away team winning in 90 minutes.
-    draw_prob : float
-        Market-implied probability of draw after 90 minutes.
-    match_type : str
-        One of: 'high_tempo', 'standard', 'cautious', 'low_block', 'third_place'
-        Controls the early-window suppression correction magnitude.
-    altitude_m : float
-        Venue altitude in metres. Triggers late-window suppression above 1500m.
-    """
+    # Container for match-level inputs used across multiple models.
+
+    # lambda_total: Expected total goals for the match (from betting market over/under).
+    # home_win_prob: Market-implied probability of home team winning in 90 minutes.
+    # away_win_prob: Market-implied probability of away team winning in 90 minutes.
+    # draw_prob: Market-implied probability of draw after 90 minutes.
+    # match_type: Controls the early-window suppression correction magnitude. One of: 'high_tempo', 'standard', 'cautious', 'low_block', 'third_place'
+    # altitude_m: Venue altitude in metres. Triggers late-window suppression above 1500m.
+
     lambda_total: float
     home_win_prob: float
     away_win_prob: float
@@ -63,8 +41,7 @@ class MatchContext:
 
 
 # Empirically validated correction brackets from tournament data.
-# Values represent percentage points subtracted from naive Poisson estimate
-# for the pre-hydration-break window. Positive = downward correction.
+# Values represent percentage points subtracted from naive Poisson estimate for the pre-hydration-break window. Positive = downward correction.
 CORRECTION_BRACKETS = {
     'high_tempo':    (6, 8),    # Two elite attacking sides, minimal caution
     'standard':      (8, 10),   # Balanced knockout match
@@ -74,68 +51,44 @@ CORRECTION_BRACKETS = {
 }
 
 # Altitude suppression factor for late-window goal markets (post-75 min).
-# Validated: England vs Mexico at Azteca (2200m) produced +33 RBP.
 ALTITUDE_SUPPRESSION_THRESHOLD_M = 1500
 ALTITUDE_LATE_WINDOW_FACTOR = 0.80  # 20% reduction in effective λ
 
 
 def poisson_pmf(k: int, lam: float) -> float:
-    """P(X = k) for X ~ Poisson(lam)."""
+    # P(X = k) for X ~ Poisson(lam)
     if lam <= 0:
         return 1.0 if k == 0 else 0.0
     return math.exp(-lam) * (lam ** k) / math.factorial(k)
 
 
 def poisson_cdf(k: int, lam: float) -> float:
-    """P(X <= k) for X ~ Poisson(lam)."""
+    # P(X <= k) for X ~ Poisson(lam)
     return sum(poisson_pmf(i, lam) for i in range(k + 1))
 
 
 def p_at_least_one_goal(lam_window: float) -> float:
-    """
-    P(≥1 goal in a window) given expected goals in that window.
 
-    Parameters
-    ----------
-    lam_window : float
-        Expected goals specifically within the time window of interest.
-        Compute as: lambda_total * (window_minutes / 90)
+    # P(≥1 goal in a window) given expected goals in that window.
+    # lam_window: Expected goals specifically within the time window of interest. Compute as: lambda_total * (window_minutes / 90)
 
-    Returns
-    -------
-    float
-        Probability of at least one goal in the window.
-    """
     return 1.0 - math.exp(-lam_window)
 
 
-def window_lambda(lambda_total: float, start_min: float, end_min: float,
-                  match_minutes: float = 90.0) -> float:
-    """
-    Expected goals in a specific time window, assuming uniform goal distribution.
+def window_lambda(lambda_total: float, start_min: float, end_min: float, match_minutes: float = 90.0) -> float:
 
-    Parameters
-    ----------
-    lambda_total : float
-        Expected total goals across the full match.
-    start_min : float
-        Start of window (inclusive), in minutes.
-    end_min : float
-        End of window (exclusive), in minutes.
-    match_minutes : float
-        Total match duration for normalisation (default 90).
+    # Expected goals in a specific time window, assuming uniform goal distribution.
 
-    Returns
-    -------
-    float
-        Expected goals in the specified window.
-    """
+    # lambda_total: Expected total goals across the full match.
+    # start_min: Start of window (inclusive), in minutes.
+    # end_min: End of window (exclusive), in minutes.
+    # match_minutes: Total match duration for normalisation (default 90).
+
     window_size = end_min - start_min
     return lambda_total * (window_size / match_minutes)
 
 
-def goal_before_hydration_break(ctx: MatchContext,
-                                 break_minute: float = 30.0) -> dict:
+def goal_before_hydration_break(ctx: MatchContext, break_minute: float = 30.0) -> dict:
     """
     P(≥1 goal before the first hydration break).
 
