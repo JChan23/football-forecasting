@@ -1,55 +1,21 @@
-"""
-xg_share.py
------------
-xG-share decomposition models for underdog market pricing.
+# xG-share decomposition models for underdog market pricing.
 
-Core insight: When a crowd is asked "will Team B (underdog) hold a lead
-at any point?", they anchor on Team B's win probability or recent narrative
-(e.g. "Switzerland never trailed this tournament"). The correct model is:
-
-    P(underdog leads at any point) ≈ P(underdog scores first)
-                                   = xG_underdog / (xG_home + xG_away)
-
-The second term (underdog comes from behind to lead) is negligible and
-can be ignored for strong favourites.
-
-Validated markets:
-- Paraguay holds lead vs France: 16% (crowd 22%), NO → +9.12 RBP
-- Switzerland holds lead vs Argentina: 30% (crowd 33%), NO → +8.04 RBP
-- Belgium holds lead vs Spain: 37% (crowd 34%), NO → +0.96 RBP
-"""
-
+# Core insight: When a crowd is asked "will Team B (underdog) hold a lead at any point?", they anchor on Team B's win probability or recent narrative
+# The correct model is: P(underdog leads at any point) ≈ P(underdog scores first) = xG_underdog / (xG_home + xG_away)
+# The second term (underdog comes from behind to lead) is negligible and can be ignored for strong favourites.
 
 def underdog_holds_lead(xg_underdog: float,
                          xg_favourite: float,
                          p_underdog_comeback_lead: float = 0.01) -> dict:
-    """
-    P(underdog holds a lead at any point in regulation, excl. shootout).
 
-    Decomposition:
-        P(lead) = P(scores first) + P(equalises then goes ahead)
+    # P(underdog holds a lead at any point in regulation, excl. shootout).
+    # Decomposition: P(lead) = P(scores first) + P(equalises then goes ahead)
+    # The second term is negligible (<2%) for typical favourite/underdog matchups and is treated as a fixed small constant.
 
-    The second term is negligible (<2%) for typical favourite/underdog
-    matchups and is treated as a fixed small constant.
+    # xg_underdog: Expected goals for the underdog team (from model or betting market).
+    # xg_favourite: Expected goals for the favourite team.
+    # p_underdog_comeback_lead: Probability underdog scores twice before favourite equalises (default 0.01 — effectively negligible for strong favourites).
 
-    Parameters
-    ----------
-    xg_underdog : float
-        Expected goals for the underdog team (from model or betting market).
-    xg_favourite : float
-        Expected goals for the favourite team.
-    p_underdog_comeback_lead : float
-        Probability underdog scores twice before favourite equalises
-        (default 0.01 — effectively negligible for strong favourites).
-
-    Returns
-    -------
-    dict with keys:
-        'p_scores_first': float
-        'p_holds_lead': float (= p_scores_first + p_comeback)
-        'crowd_typical_error': str
-        'xg_share': float
-    """
     if xg_underdog + xg_favourite <= 0:
         raise ValueError("Combined xG must be positive.")
 
@@ -73,22 +39,13 @@ def underdog_holds_lead(xg_underdog: float,
 
 
 def first_scorer_probability(xg_home: float, xg_away: float) -> dict:
-    """
-    Probability each team scores first, derived from xG shares.
 
-    Also returns P(0-0 in regulation) as the complement.
+    # Probability each team scores first, derived from xG shares.
+    # Also returns P(0-0 in regulation) as the complement.
 
-    Parameters
-    ----------
-    xg_home : float
-        Expected goals for home/first-named team.
-    xg_away : float
-        Expected goals for away/second-named team.
+    # xg_home: Expected goals for home/first-named team.
+    # xg_away: Expected goals for away/second-named team.
 
-    Returns
-    -------
-    dict
-    """
     import math
 
     total_xg = xg_home + xg_away
