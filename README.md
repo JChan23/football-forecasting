@@ -159,7 +159,7 @@ from models import (
 )
 from calibration import remove_vig_three_outcome
 
-# 1. Convert match odds to vig-free probabilities
+# Convert match odds to vig-free probabilities
 probs = remove_vig_three_outcome(
     odds_home=2.30,
     odds_draw=3.00,
@@ -167,7 +167,7 @@ probs = remove_vig_three_outcome(
     odds_format='decimal'
 )
 
-# 2. Build match context
+# Build match context
 ctx = MatchContext(
     lambda_total=2.4,
     home_win_prob=probs['p_home_win'],
@@ -177,13 +177,13 @@ ctx = MatchContext(
     altitude_m=0
 )
 
-# 3. Price the "goal before hydration break" market
+# Price the "goal before hydration break" market
 result = goal_before_hydration_break(ctx)
 print(f"P(goal before break): {result['point_estimate']:.1%}")
 print(f"  Naive Poisson was: {result['naive_poisson']:.1%}")
 print(f"  Correction applied: -{result['correction_applied'][1]}ppt")
 
-# 4. Price the "card before first goal" market
+# Price the "card before first goal" market
 card_result = card_before_first_goal(
     lambda_goals=2.4,
     lambda_cards=3.2,
@@ -192,7 +192,7 @@ card_result = card_before_first_goal(
 print(f"\nP(card before first goal): {card_result['p_card_before_goal']:.1%}")
 print(f"  Formula: λ_c/(λ_c+λ_g) = {card_result['lambda_cards_adjusted']:.1f}/({card_result['lambda_cards_adjusted']:.1f}+{card_result['lambda_goals']:.1f})")
 
-# 5. Price the penalty shootout market
+# Price the penalty shootout market
 shootout = penalty_shootout_probability(
     draw_prob_90=probs['p_draw'],
     p_draw_after_et=0.42
@@ -206,23 +206,23 @@ print(f"  Crowd typically anchors at: {shootout['crowd_anchor']}")
 ## Worked Examples
 
 ### Example 1: Card Before First Goal (Portugal vs Spain, QF)
-**YOU: 67% | CROWD: 50% | OUTCOME: YES | RBP: +32.29**
+**ME: 67% | CROWD: 50% | OUTCOME: YES | RBP: +32.29**
 
 ```python
 from models import card_before_first_goal
 
 result = card_before_first_goal(
-    lambda_goals=1.8,       # Under 2.5 favoured; H2H history
+    lambda_goals=1.8,       # Under 2.5 favoured, H2H history
     lambda_cards=3.2,
-    card_context='rivalry'  # Iberian derby → +15% card rate
+    card_context='rivalry'  # Iberian derby, +15% card rate
 )
 # Output: P(card before goal) = 0.671
 # Formula: 3.68 / (3.68 + 1.8) = 67.1%
-# Crowd anchored at 50% treating this as a coin flip.
+# Crowd was anchored at 50%, treating this as a coin flip
 ```
 
 ### Example 2: Late Window at Altitude (England vs Mexico, R16)
-**YOU: 31% | CROWD: 49% | OUTCOME: NO | RBP: +33.04**
+**ME: 31% | CROWD: 49% | OUTCOME: NO | RBP: +33.04**
 
 ```python
 from models import MatchContext, goal_after_second_hydration_break
@@ -232,7 +232,7 @@ ctx = MatchContext(
     home_win_prob=0.24,
     away_win_prob=0.52,
     draw_prob=0.24,
-    altitude_m=2240   # Estadio Azteca — triggers 20% λ suppression
+    altitude_m=2240   # Estadio Azteca triggers 20% λ suppression due to altitude
 )
 result = goal_after_second_hydration_break(ctx)
 # Output: point_estimate = 0.308 (vs naive 0.385 at sea level)
@@ -240,17 +240,17 @@ result = goal_after_second_hydration_break(ctx)
 ```
 
 ### Example 3: Shootout Decomposition (Morocco vs Canada, R16)
-**YOU: 12% | CROWD: 22% | OUTCOME: NO | RBP: +11.33**
+**ME: 12% | CROWD: 22% | OUTCOME: NO | RBP: +11.33**
 
 ```python
 from models import penalty_shootout_probability
 
 result = penalty_shootout_probability(
-    draw_prob_90=0.275,   # Draw +230 → vig-removed 27.5%
+    draw_prob_90=0.275,
     p_draw_after_et=0.42
 )
 # Output: P(shootout) = 0.275 × 0.42 = 11.6%
-# Crowd anchored at 22% ignoring the conditional structure
+# Crowd was anchored at 22% ignoring the conditional structure
 ```
 
 ---
